@@ -1,4 +1,7 @@
+"use client";
 import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BarChart2,
   Eye,
@@ -8,18 +11,35 @@ import {
   TrendingUp, // Import an icon for Funnel Conversions
 } from "lucide-react";
 
-interface SidebarProps {
-  onTabChange: (tab: string) => void;
-  activeTab: string;
-}
+const Sidebar = () => {
+  const pathname = usePathname();
 
-const Sidebar: React.FC<SidebarProps> = ({ onTabChange, activeTab }) => {
   const tabs = [
-    { name: "Session Replay", icon: <Eye size={18} /> },
-    { name: "Heatmaps", icon: <MousePointer size={18} /> },
-    { name: "Page Analytics", icon: <BarChart2 size={18} /> },
-    { name: "A/B Testing", icon: <SplitSquareVertical size={18} /> },
-    { name: "Funnel Conversions", icon: <TrendingUp size={18} /> }, // Added Funnel Conversions
+    {
+      name: "Page Analytics",
+      icon: <BarChart2 size={18} />,
+      href: "/dashboard",
+    },
+    {
+      name: "A/B Testing",
+      icon: <SplitSquareVertical size={18} />,
+      href: "/dashboard/ab-testing",
+    },
+    {
+      name: "Funnel Conversions",
+      icon: <TrendingUp size={18} />,
+      href: "/dashboard/funnel-conversions",
+    },
+    {
+      name: "Session Replay",
+      icon: <Eye size={18} />,
+      href: "/dashboard/session-replay",
+    },
+    {
+      name: "Heatmaps",
+      icon: <MousePointer size={18} />,
+      href: "/dashboard/heatmaps",
+    },
   ];
 
   return (
@@ -35,17 +55,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onTabChange, activeTab }) => {
           <ul className="space-y-2">
             {tabs.map((tab) => (
               <li key={tab.name}>
-                <button
-                  onClick={() => onTabChange(tab.name)}
+                <Link
+                  href={tab.href}
                   className={`flex items-center w-full p-3 rounded-lg transition-colors duration-200 ${
-                    activeTab === tab.name
+                    pathname === tab.href
                       ? "bg-[#1DCD9F] text-black"
                       : "text-gray-300 hover:bg-[#222222]"
                   }`}
                 >
                   <span className="mr-3">{tab.icon}</span>
                   <span>{tab.name}</span>
-                </button>
+                </Link>
               </li>
             ))}
           </ul>

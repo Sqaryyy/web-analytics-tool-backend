@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calendar,
   ArrowDown,
@@ -16,120 +16,265 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Define interfaces for API response
+interface ApiResponse {
+  metrics: {
+    visitors: {
+      count: number;
+      change: string;
+    };
+    viewsPerVisit: {
+      count: string;
+      change: string;
+    };
+    bounceRate: {
+      rate: string;
+      change: string;
+    };
+    avgVisitDuration: {
+      seconds: number;
+      change: string;
+    };
+  };
+  trafficOverview: Array<{
+    month: string;
+    count: number;
+  }>;
+  topPages: Array<{
+    page: string;
+    views: number;
+    change: string;
+  }>;
+  trafficSources: Array<{
+    source: string;
+    count: number;
+    percentage: string;
+  }>;
+  browserTypes: Array<{
+    browser: string;
+    count: number;
+    percentage: string;
+  }>;
+  osTypes: Array<{
+    os: string;
+    count: number;
+    percentage: string;
+  }>;
+  locations: Array<{
+    country: string;
+    count: number;
+    percentage: string;
+  }>;
+  deviceTypes: Array<{
+    device: string;
+    count: number;
+    percentage: string;
+  }>;
+  customEvents: Array<{
+    name: string;
+    count: number;
+    percentage: string;
+  }>;
+}
+
+// Existing interface definitions
 interface AnalyticCardProps {
   title: string;
   value: string;
   change: string;
   isNegativeChange?: boolean;
+  isLoading?: boolean;
 }
+
 interface TopPage {
   name: string;
   views: number;
   change: number;
 }
+
 interface AnalyticsListItem {
   name: string;
   value: number;
   percentage: number;
 }
+
 interface AnalyticsListCardProps {
   title: string;
   items: AnalyticsListItem[];
   itemsPerPage?: number;
+  isLoading?: boolean;
 }
+
 interface TopPagesListProps {
   pages: TopPage[];
   itemsPerPage?: number;
+  isLoading?: boolean;
 }
+
 interface TrafficPoint {
   label: string;
   value: number;
 }
 
+// Skeleton Pulse Animation
+const SkeletonPulse = ({ className }: { className: string }) => {
+  return (
+    <div className={`bg-gray-700 animate-pulse rounded ${className}`}></div>
+  );
+};
+
 // --- Main Component ---
 const PageAnalytics = () => {
-  // --- Data ---
-  const visitorsData = { value: "3,860", change: "428.0%" };
-  const viewsPerVisitData = { value: "2.42", change: "-38.8%" };
-  const bounceRateData = { value: "55.9%", change: "20.2%" };
-  const avgVisitDurationData = { value: "53s", change: "-49.6%" };
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<ApiResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // --- Updated Traffic Data with different Labels ---
-  const trafficData: TrafficPoint[] = [
-    { label: "Jan", value: 350 },
-    { label: "Feb", value: 450 },
-    { label: "Mar", value: 300 },
-    { label: "Apr", value: 500 },
-    { label: "May", value: 600 },
-    { label: "Jun", value: 400 },
-    { label: "Jul", value: 700 },
-    { label: "Aug", value: 550 },
-    { label: "Sep", value: 650 },
-    { label: "Oct", value: 750 },
-    { label: "Nov", value: 500 },
-    { label: "Dec", value: 800 },
-  ];
+  // Fetch data from API
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/dashboard?websiteId=67fb8e5e82512ada9636be1f"
+        );
 
-  // --- Other Data (remains the same) ---
-  const topPagesData: TopPage[] = [
-    { name: "Homepage", views: 3845, change: 11.1 },
-    { name: "/pricing", views: 1007, change: 10.8 },
-    { name: "/w/*/dashboard/", views: 988, change: 10.6 },
-    { name: "/w/*/visitors/", views: 597, change: 6.4 },
-    { name: "/share/peasy.so/", views: 459, change: 4.9 },
-    { name: "/docs", views: 350, change: 3.1 },
-    { name: "/blog/new-feature", views: 210, change: -2.5 },
-    { name: "/careers", views: 180, change: 1.5 },
-    { name: "/integrations", views: 155, change: 0.8 },
-  ];
-  const trafficSourcesData: AnalyticsListItem[] = [
-    { name: "Direct/Unknown", value: 1930, percentage: 50.0 },
-    { name: "www.reddit.com", value: 543, percentage: 14.1 },
-    { name: "www.indiehackers.com", value: 300, percentage: 7.8 },
-    { name: "com.reddit.frontpage", value: 297, percentage: 7.7 },
-    { name: "Google Search", value: 210, percentage: 5.4 },
-    { name: "Twitter / X", value: 150, percentage: 3.9 },
-    { name: "LinkedIn", value: 80, percentage: 2.1 },
-  ];
-  const browserTypeData: AnalyticsListItem[] = [
-    { name: "Chrome", value: 2500, percentage: 64.8 },
-    { name: "Safari", value: 650, percentage: 16.8 },
-    { name: "Firefox", value: 410, percentage: 10.6 },
-    { name: "Edge", value: 300, percentage: 7.8 },
-    { name: "Brave", value: 55, percentage: 1.4 },
-    { name: "Opera", value: 35, percentage: 0.9 },
-  ];
-  const osTypeData: AnalyticsListItem[] = [
-    { name: "Windows", value: 1800, percentage: 46.6 },
-    { name: "macOS", value: 1100, percentage: 28.5 },
-    { name: "Linux", value: 450, percentage: 11.7 },
-    { name: "iOS", value: 310, percentage: 8.0 },
-    { name: "Android", value: 200, percentage: 5.2 },
-  ];
-  const locationData: AnalyticsListItem[] = [
-    { name: "United States", value: 1200, percentage: 31.1 },
-    { name: "India", value: 450, percentage: 11.7 },
-    { name: "Germany", value: 380, percentage: 9.8 },
-    { name: "United Kingdom", value: 320, percentage: 8.3 },
-    { name: "Canada", value: 250, percentage: 6.5 },
-    { name: "France", value: 180, percentage: 4.7 },
-    { name: "Brazil", value: 150, percentage: 3.9 },
-    { name: "Australia", value: 120, percentage: 3.1 },
-  ];
-  const deviceTypeData: AnalyticsListItem[] = [
-    { name: "Desktop", value: 2200, percentage: 57.0 },
-    { name: "Mobile", value: 1360, percentage: 35.2 },
-    { name: "Tablet", value: 300, percentage: 7.8 },
-  ];
-  const customEventsData: AnalyticsListItem[] = [
-    { name: "Signup Button Click", value: 550, percentage: 14.2 },
-    { name: "Pricing Page View", value: 1007, percentage: 26.1 },
-    { name: "Download Report Click", value: 120, percentage: 3.1 },
-    { name: "Video Play", value: 85, percentage: 2.2 },
-    { name: "Contact Form Submit", value: 45, percentage: 1.2 },
-    { name: "Feature X Used", value: 300, percentage: 7.8 },
-    { name: "Upgrade Attempt", value: 95, percentage: 2.5 },
-  ];
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data: ApiResponse = await response.json();
+        setDashboardData(data);
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again later.");
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Transform API data for components
+  const transformTopPages = (): TopPage[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.topPages ||
+      dashboardData.topPages.length === 0
+    )
+      return [];
+
+    return dashboardData.topPages.map((page) => ({
+      name: page.page,
+      views: page.views,
+      change: parseFloat(page.change),
+    }));
+  };
+
+  const transformTrafficSources = (): AnalyticsListItem[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.trafficSources ||
+      dashboardData.trafficSources.length === 0
+    )
+      return [];
+
+    return dashboardData.trafficSources.map((source) => ({
+      name: source.source,
+      value: source.count,
+      percentage: parseFloat(source.percentage),
+    }));
+  };
+
+  const transformBrowserTypes = (): AnalyticsListItem[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.browserTypes ||
+      dashboardData.browserTypes.length === 0
+    )
+      return [];
+
+    return dashboardData.browserTypes.map((browser) => ({
+      name: browser.browser,
+      value: browser.count,
+      percentage: parseFloat(browser.percentage),
+    }));
+  };
+
+  const transformOsTypes = (): AnalyticsListItem[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.osTypes ||
+      dashboardData.osTypes.length === 0
+    )
+      return [];
+
+    return dashboardData.osTypes.map((os) => ({
+      name: os.os,
+      value: os.count,
+      percentage: parseFloat(os.percentage),
+    }));
+  };
+
+  const transformLocations = (): AnalyticsListItem[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.locations ||
+      dashboardData.locations.length === 0
+    )
+      return [];
+
+    return dashboardData.locations.map((location) => ({
+      name: location.country,
+      value: location.count,
+      percentage: parseFloat(location.percentage),
+    }));
+  };
+
+  const transformDeviceTypes = (): AnalyticsListItem[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.deviceTypes ||
+      dashboardData.deviceTypes.length === 0
+    )
+      return [];
+
+    return dashboardData.deviceTypes.map((device) => ({
+      name: device.device,
+      value: device.count,
+      percentage: parseFloat(device.percentage),
+    }));
+  };
+
+  const transformCustomEvents = (): AnalyticsListItem[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.customEvents ||
+      dashboardData.customEvents.length === 0
+    )
+      return [];
+
+    return dashboardData.customEvents.map((event) => ({
+      name: event.name,
+      value: event.count,
+      percentage: parseFloat(event.percentage),
+    }));
+  };
+
+  const transformTrafficData = (): TrafficPoint[] => {
+    if (
+      !dashboardData ||
+      !dashboardData.trafficOverview ||
+      dashboardData.trafficOverview.length === 0
+    )
+      return [];
+
+    return dashboardData.trafficOverview.map((point) => ({
+      label: point.month,
+      value: point.count,
+    }));
+  };
+
+  const noVisitorData = "No visitor data available";
 
   // --- Render ---
   return (
@@ -148,30 +293,73 @@ const PageAnalytics = () => {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/30 border border-red-800 text-red-200 p-4 rounded-lg">
+          <p>{error}</p>
+        </div>
+      )}
+
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         <AnalyticCard
           title="Visitors"
-          value={visitorsData.value}
-          change={visitorsData.change}
+          value={
+            dashboardData
+              ? dashboardData.metrics.visitors.count.toLocaleString()
+              : "0"
+          }
+          change={
+            dashboardData ? `${dashboardData.metrics.visitors.change}%` : "0%"
+          }
+          isLoading={isLoading}
         />
         <AnalyticCard
           title="Views per Visit"
-          value={viewsPerVisitData.value}
-          change={viewsPerVisitData.change}
-          isNegativeChange={true}
+          value={
+            dashboardData ? dashboardData.metrics.viewsPerVisit.count : "0"
+          }
+          change={
+            dashboardData
+              ? `${dashboardData.metrics.viewsPerVisit.change}%`
+              : "0%"
+          }
+          isNegativeChange={dashboardData?.metrics.viewsPerVisit.change.startsWith(
+            "-"
+          )}
+          isLoading={isLoading}
         />
         <AnalyticCard
           title="Bounce Rate"
-          value={bounceRateData.value}
-          change={bounceRateData.change}
-          isNegativeChange={true}
+          value={
+            dashboardData ? `${dashboardData.metrics.bounceRate.rate}%` : "0%"
+          }
+          change={
+            dashboardData ? `${dashboardData.metrics.bounceRate.change}%` : "0%"
+          }
+          isNegativeChange={
+            dashboardData?.metrics.bounceRate.change.startsWith("-")
+              ? false
+              : true
+          }
+          isLoading={isLoading}
         />
         <AnalyticCard
           title="Avg. Visit Duration"
-          value={avgVisitDurationData.value}
-          change={avgVisitDurationData.change}
-          isNegativeChange={true}
+          value={
+            dashboardData
+              ? `${dashboardData.metrics.avgVisitDuration.seconds}s`
+              : "0s"
+          }
+          change={
+            dashboardData
+              ? `${dashboardData.metrics.avgVisitDuration.change}%`
+              : "0%"
+          }
+          isNegativeChange={dashboardData?.metrics.avgVisitDuration.change.startsWith(
+            "-"
+          )}
+          isLoading={isLoading}
         />
       </div>
 
@@ -179,31 +367,56 @@ const PageAnalytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-[#151515] border border-gray-800 rounded-xl p-5">
           <h3 className="font-medium mb-6">Traffic Overview</h3>
-          {/* Pass the updated trafficData */}
-          <TrafficOverviewChart data={trafficData} />
+          {isLoading ? (
+            <div className="h-[380px] w-full flex items-center justify-center">
+              <SkeletonPulse className="h-[300px] w-full" />
+            </div>
+          ) : transformTrafficData().length > 0 ? (
+            <TrafficOverviewChart data={transformTrafficData()} />
+          ) : (
+            <div className="h-[380px] w-full flex items-center justify-center">
+              {noVisitorData}
+            </div>
+          )}
         </div>
-        <div className="bg-[#151515] border border-gray-800 rounded-xl p-5">
-          <TopPagesList pages={topPagesData} itemsPerPage={5} />
+        <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 flex flex-col">
+          <h3 className="font-medium mb-4 flex-shrink-0">Top Pages</h3>
+          {transformTopPages().length > 0 ? (
+            <TopPagesList
+              pages={transformTopPages()}
+              itemsPerPage={5}
+              isLoading={isLoading}
+            />
+          ) : (
+            <div className="flex-grow flex items-center justify-center">
+              {noVisitorData}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Other cards remain the same */}
       {/* Traffic Sources, Browser, OS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <AnalyticsListCard
           title="Traffic Sources"
-          items={trafficSourcesData}
+          items={transformTrafficSources()}
           itemsPerPage={5}
+          isLoading={isLoading}
+          emptyMessage={noVisitorData}
         />
         <AnalyticsListCard
           title="Browser Type"
-          items={browserTypeData}
+          items={transformBrowserTypes()}
           itemsPerPage={5}
+          isLoading={isLoading}
+          emptyMessage={noVisitorData}
         />
         <AnalyticsListCard
           title="OS Type"
-          items={osTypeData}
+          items={transformOsTypes()}
           itemsPerPage={5}
+          isLoading={isLoading}
+          emptyMessage={noVisitorData}
         />
       </div>
 
@@ -211,39 +424,57 @@ const PageAnalytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <AnalyticsListCard
           title="Location"
-          items={locationData}
+          items={transformLocations()}
           itemsPerPage={5}
+          isLoading={isLoading}
+          emptyMessage={noVisitorData}
         />
         <AnalyticsListCard
           title="Device Type"
-          items={deviceTypeData}
+          items={transformDeviceTypes()}
           itemsPerPage={5}
+          isLoading={isLoading}
+          emptyMessage={noVisitorData}
         />
         <AnalyticsListCard
           title="Custom Events"
-          items={customEventsData}
+          items={transformCustomEvents()}
           itemsPerPage={5}
+          isLoading={isLoading}
+          emptyMessage={noVisitorData}
         />
       </div>
     </div>
   );
 };
 
-// --- Sub-Components ---
-
-// AnalyticCard component remains the same
+// AnalyticCard component with skeleton
 const AnalyticCard = ({
   title,
   value,
   change,
   isNegativeChange = false,
+  isLoading = false,
 }: AnalyticCardProps) => {
   const changeIsNegativeActual = change.startsWith("-");
   const displayNegative = isNegativeChange || changeIsNegativeActual;
   const colorClass = displayNegative ? "text-red-500" : "text-[#1DCD9F]";
 
+  if (isLoading) {
+    return (
+      <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 ">
+        <div className="flex justify-between items-start mb-7">
+          <SkeletonPulse className="h-5 w-24" />
+          <SkeletonPulse className="h-4 w-16" />
+        </div>
+        <SkeletonPulse className="h-8 w-20 mb-1" />
+        <SkeletonPulse className="h-4 w-24" />
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-[#151515] border border-gray-800 rounded-xl p-5">
+    <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 ">
       <div className="flex justify-between items-start mb-4">
         <h3 className="font-medium text-base">{title}</h3>
         <div className={`flex items-center ${colorClass}`}>
@@ -287,8 +518,12 @@ const TrafficOverviewChart = ({ data }: { data: TrafficPoint[] }) => {
   );
 };
 
-// TopPagesList component remains the same
-const TopPagesList = ({ pages, itemsPerPage = 5 }: TopPagesListProps) => {
+// TopPagesList component with skeleton
+const TopPagesList = ({
+  pages,
+  itemsPerPage = 5,
+  isLoading = false,
+}: TopPagesListProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(pages.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -300,83 +535,66 @@ const TopPagesList = ({ pages, itemsPerPage = 5 }: TopPagesListProps) => {
   const approxItemHeight = 60;
 
   return (
-    <div className="h-full flex flex-col">
-      <h3 className="font-medium mb-4 flex-shrink-0">Top Pages</h3>
+    <div className=" flex flex-col">
       <div className="space-y-3 flex-grow">
-        {displayedPages.map((page) => (
-          <div
-            key={page.name}
-            className="bg-[#111111] rounded-lg p-3 flex justify-between items-center"
-          >
-            <div>
-              <p
-                className="text-sm font-medium truncate max-w-[120px] sm:max-w-[150px]"
-                title={page.name}
+        {isLoading
+          ? Array(itemsPerPage)
+              .fill(0)
+              .map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-[#111111] rounded-lg p-3.5 flex justify-between items-center"
+                >
+                  <div>
+                    <SkeletonPulse className="h-4 w-28 mb-1" />
+                    <SkeletonPulse className="h-3 w-16" />
+                  </div>
+                  <SkeletonPulse className="h-5 w-12" />
+                </div>
+              ))
+          : displayedPages.map((page) => (
+              <div
+                key={page.name}
+                className="bg-[#111111] rounded-lg p-3 flex justify-between items-center"
               >
-                {page.name}
-              </p>
-              <p className="text-xs text-gray-400">
-                {page.views.toLocaleString()} views
-              </p>
-            </div>
-            <div
-              className={`flex items-center flex-shrink-0 ${
-                page.change >= 0 ? "text-[#1DCD9F]" : "text-red-500"
-              }`}
-            >
-              {page.change >= 0 ? (
-                <ArrowUp size={14} />
-              ) : (
-                <ArrowDown size={14} />
-              )}
-              <span className="text-sm ml-1">{Math.abs(page.change)}%</span>
-            </div>
-          </div>
-        ))}
-        {displayedPages.length < itemsPerPage && (
-          <div
-            style={{
-              height: `${
-                (itemsPerPage - displayedPages.length) * approxItemHeight
-              }px`,
-            }}
-          ></div>
-        )}
+                <div>
+                  <p
+                    className="text-sm font-medium truncate max-w-[120px] sm:max-w-[150px]"
+                    title={page.name}
+                  >
+                    {page.name}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {page.views.toLocaleString()} views
+                  </p>
+                </div>
+                <div
+                  className={`flex items-center flex-shrink-0 ${
+                    page.change >= 0 ? "text-[#1DCD9F]" : "text-red-500"
+                  }`}
+                >
+                  {page.change >= 0 ? (
+                    <ArrowUp size={14} />
+                  ) : (
+                    <ArrowDown size={14} />
+                  )}
+                  <span className="text-sm ml-1">{Math.abs(page.change)}%</span>
+                </div>
+              </div>
+            ))}
       </div>
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-700 flex-shrink-0">
-          <button
-            onClick={handlePrevPage}
-            disabled={currentPage === 1}
-            className="p-1 rounded cursor-pointer hover:bg-[#222222] disabled:opacity-50 disabled:cursor-default"
-            aria-label="Previous Page"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <span className="text-xs text-gray-400">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-            className="p-1 rounded cursor-pointer hover:bg-[#222222] disabled:opacity-50 disabled:cursor-default"
-            aria-label="Next Page"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
-      {totalPages <= 1 && <div className="h-[37px] mt-4 flex-shrink-0"></div>}
     </div>
   );
 };
 
-// AnalyticsListCard component remains the same
+// AnalyticsListCard component with skeleton
 const AnalyticsListCard = ({
   title,
   items,
   itemsPerPage = 5,
-}: AnalyticsListCardProps) => {
+  isLoading = false,
+  emptyMessage = "No data available",
+}: AnalyticsListCardProps & { emptyMessage?: string }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(items.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -388,59 +606,44 @@ const AnalyticsListCard = ({
   const approxItemHeight = 52;
 
   return (
-    <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 h-full flex flex-col">
+    <div className="bg-[#151515] border border-gray-800 rounded-xl p-5  flex flex-col">
       <h3 className="font-medium mb-4 flex-shrink-0">{title}</h3>
       <div className="space-y-3 flex-grow">
-        {displayedItems.map((item) => (
-          <div
-            key={item.name}
-            className="bg-[#111111] rounded-lg p-3 flex justify-between items-center"
-          >
-            <p
-              className="text-sm font-medium truncate max-w-[120px] sm:max-w-[150px]"
-              title={item.name}
-            >
-              {item.name}
-            </p>
-            <p className="text-sm text-gray-400 text-right flex-shrink-0">
-              {item.value.toLocaleString()} ({item.percentage}%)
-            </p>
+        {isLoading ? (
+          Array(itemsPerPage)
+            .fill(0)
+            .map((_, index) => (
+              <div
+                key={index}
+                className="bg-[#111111] rounded-lg p-3.5 flex justify-between items-center"
+              >
+                <SkeletonPulse className="h-4 w-28" />
+                <SkeletonPulse className="h-4 w-20" />
+              </div>
+            ))
+        ) : items.length === 0 ? (
+          <div className=" flex items-center justify-center h-[280px]">
+            {emptyMessage}
           </div>
-        ))}
-        {displayedItems.length < itemsPerPage && (
-          <div
-            style={{
-              height: `${
-                (itemsPerPage - displayedItems.length) * approxItemHeight
-              }px`,
-            }}
-          ></div>
+        ) : (
+          displayedItems.map((item) => (
+            <div
+              key={item.name}
+              className="bg-[#111111] rounded-lg p-3 flex justify-between items-center"
+            >
+              <p
+                className="text-sm font-medium truncate max-w-[120px] sm:max-w-[150px]"
+                title={item.name}
+              >
+                {item.name}
+              </p>
+              <p className="text-sm text-gray-400 text-right flex-shrink-0">
+                {item.value.toLocaleString()} ({item.percentage}%)
+              </p>
+            </div>
+          ))
         )}
       </div>
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-700 flex-shrink-0">
-          <button
-            onClick={handlePrevPage}
-            disabled={currentPage === 1}
-            className="p-1 rounded cursor-pointer hover:bg-[#222222] disabled:opacity-50 disabled:cursor-default"
-            aria-label="Previous Page"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <span className="text-xs text-gray-400">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-            className="p-1 rounded cursor-pointer hover:bg-[#222222] disabled:opacity-50 disabled:cursor-default"
-            aria-label="Next Page"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
-      {totalPages <= 1 && <div className="h-[37px] mt-4 flex-shrink-0"></div>}
     </div>
   );
 };

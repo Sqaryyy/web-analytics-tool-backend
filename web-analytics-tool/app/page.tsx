@@ -14,6 +14,14 @@ import {
   Users,
   Check,
 } from "lucide-react";
+import {
+  ClerkProvider,
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -110,20 +118,38 @@ export default function Home() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <motion.button
-                className="bg-transparent border border-[#1DCD9F] text-[#1DCD9F] px-4 py-2 rounded-md hover:bg-[#1DCD9F]/10 transition"
-                whileHover={buttonHover}
-                whileTap={cardTap}
-              >
-                Login
-              </motion.button>
-              <motion.button
-                className="bg-[#1DCD9F] text-black px-4 py-2 rounded-md hover:bg-[#169976] transition"
-                whileHover={buttonHover}
-                whileTap={cardTap}
-              >
-                Get Started
-              </motion.button>
+              <SignedOut>
+                <SignInButton>
+                  <motion.button
+                    className="bg-transparent border border-[#1DCD9F] text-[#1DCD9F] px-4 py-2 rounded-md hover:bg-[#1DCD9F]/10 transition"
+                    whileHover={buttonHover}
+                    whileTap={cardTap}
+                  >
+                    Login
+                  </motion.button>
+                </SignInButton>
+                <SignUpButton>
+                  <motion.button
+                    className="bg-[#1DCD9F] text-black px-4 py-2 rounded-md hover:bg-[#169976] transition"
+                    whileHover={buttonHover}
+                    whileTap={cardTap}
+                  >
+                    Get Started
+                  </motion.button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <Link href="/dashboard" passHref>
+                  <motion.button
+                    className="bg-[#1DCD9F] text-black px-4 py-2 rounded-md hover:bg-[#169976] transition"
+                    whileHover={buttonHover}
+                    whileTap={cardTap}
+                  >
+                    Dashboard
+                  </motion.button>
+                </Link>
+                <UserButton />
+              </SignedIn>
             </div>
           </div>
         </nav>
